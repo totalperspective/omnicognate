@@ -27,13 +27,24 @@
 (defn heads [log]
   (-heads (have tx-log? log)))
 
+(defn inverse-attr [a]
+  (let [ns (namespace a)
+        n (apply str "_" (name a))]
+    (keyword ns n)))
+
 (defn references [refs tx]
   (into #{}
         (mapcat (fn [datom]
-                  (let [[op e a v] datom]
-                    (if (refs a)
-                      [e v]
-                      [e])))
+                  (cond
+                    (sequential? datom)
+                    (let [[op e a v] datom]
+                      (if (refs a)
+                        [e v]
+                        [e]))
+                    (map? datom)
+                    (keep (fn [[k v]]
+                            (when (refs k) v))
+                          datom)))
                 tx)))
 
 (defn tx-ready? [{:keys [tempids deps]}]
@@ -46,12 +57,20 @@
 
 (defn update-ids [tx old-id->new-id refs]
   (mapv (fn [datom]
-          (let [[op e a v] datom
-                e (or (old-id->new-id e) e)
-                v (if (refs a)
-                    (or (old-id->new-id v) v)
-                    v)]
-            [op e a v]))
+          (cond
+            (sequential? datom)
+            (let [[op e a v] datom
+                  e (or (old-id->new-id e) e)
+                  v (if (refs a)
+                      (or (old-id->new-id v) v)
+                      v)]
+              [op e a v])
+            (map? datom)
+            (into {} (map (fn [[k v]]
+                            [k (if (refs k)
+                                 (or (old-id->new-id v) v)
+                                 v)])
+                          datom))))
         tx))
 
 (defrecord DatomTxLog [refs log tx-info ids]
@@ -92,7 +111,9 @@
     (into #{} (ready-txes tx-info log))))
 
 (defn datom-tx-log [refs]
-  (->DatomTxLog (have set? refs)
-                []
-                {}
-                #{}))
+  (let [inverse (map inverse-attr (have set? refs))
+        refs (into refs inverse)]
+    (->DatomTxLog refs
+                  []
+                  {}
+                  #{})))

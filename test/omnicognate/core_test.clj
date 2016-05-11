@@ -4,7 +4,7 @@
             [datomic.api :as d]))
 
 (defn empty-log []
-  (datom-tx-log #{:in :knows}))
+  (datom-tx-log #{:in :knows :db/id}))
 
 (def authur
   {:tx [[:add -1 :name "Authur"]]
@@ -26,11 +26,23 @@
         [:add -1 :knows authur]]
    :ids {-1 5}})
 
+(defn picked-up-authur [authur hog]
+  {:tx [{:db/id authur
+         :in hog}]
+   :ids {}})
+
+(defn picked-up-ford [ford hog]
+  {:tx [{:db/id hog
+         :_in ford}]
+   :ids {}})
+
 (def log-data
   [authur
    ford-and-zaphod
    (heart-of-gold 3)
-   (trillian 1)])
+   (trillian 1)
+   (picked-up-authur 1 4)
+   (picked-up-ford 2 4)])
 
 (defn log []
   (reduce (fn [log {:keys [tx ids]}]
@@ -73,4 +85,16 @@
                         (rebase (:tx ford-and-zaphod) {-1 101 -2 102}))]
         (is (= #{(:tx (heart-of-gold 102))
                  (:tx (trillian 100))}
+               (heads new-log)))))))
+
+(deftest rebase-authur-hog
+  (let [log (log)]
+    (testing "Rebasing the first commit"
+      (let [new-log (-> log
+                        (rebase (:tx authur) {-1 100})
+                        (rebase (:tx ford-and-zaphod) {-1 101 -2 102})
+                        (rebase (:tx (heart-of-gold 102)) {-1 102}))]
+        (is (= #{(:tx (trillian 100))
+                 (:tx (picked-up-authur 100 102))
+                 (:tx (picked-up-ford 101 102))}
                (heads new-log)))))))
