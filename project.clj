@@ -1,4 +1,4 @@
-(defproject omnicognate "0.1.0"
+(defproject omnicognate "0.1.1-SNAPSHOT"
   :description "Like git, but for datomic"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
