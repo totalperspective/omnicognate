@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/totalperspective/omnicognate.svg?style=svg)](https://circleci.com/gh/totalperspective/omnicognate)
+
 # omnicognate
 
 A Clojure library designed to ... well, that part is up to you.
