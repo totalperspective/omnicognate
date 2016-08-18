@@ -41,6 +41,7 @@
                       (if (refs a)
                         [e v]
                         [e]))
+
                     (map? datom)
                     (keep (fn [[k v]]
                             (when (refs k) v))
@@ -65,6 +66,7 @@
                       (or (old-id->new-id v) v)
                       v)]
               [op e a v])
+
             (map? datom)
             (into {} (map (fn [[k v]]
                             [k (if (refs k)
