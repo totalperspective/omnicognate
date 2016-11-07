@@ -93,22 +93,22 @@
                                             (when-let [old-id (tempids' tempid)]
                                               [old-id new-id]))
                                           tempids))
-            new-tx-info (into {} (map (fn [tx']
-                                        (let [info (update (tx-info tx')
-                                                           :deps
-                                                           set/difference
-                                                           old-ids)
-                                              tx' (update-ids tx' old-id->new-id refs)]
-                                          [tx' info]))
-                                      new-log))]
+            new-tx-info (map (fn [tx']
+                               (let [info (update (tx-info tx')
+                                                  :deps
+                                                  set/difference
+                                                  old-ids)
+                                     tx' (update-ids tx' old-id->new-id refs)]
+                                 [tx' info]))
+                             new-log)]
         (-> self
             (update :ids set/difference old-ids)
             (update :ids set/union new-ids)
-            (assoc :tx-info new-tx-info)
-            (assoc :log (keys new-tx-info))))
+            (assoc :tx-info (into {} new-tx-info))
+            (assoc :log (map first new-tx-info))))
       self))
   (-head [self]
-    (first (ready-txes tx-info log)))
+    (first log))
   (-heads [self]
     (into #{} (ready-txes tx-info log))))
 
